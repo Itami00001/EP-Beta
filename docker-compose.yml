@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+      - ./public/uploads:/app/public/uploads
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/database.sqlite
+      - JWT_SECRET=journalisthub-super-secret-jwt-key-2024
+    restart: unless-stopped

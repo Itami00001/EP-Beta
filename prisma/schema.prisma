@@ -1,0 +1,109 @@
+// Prisma schema for JournalistHub
+// React: Работа с данными (jsrtPmDtInr) - модели данных
+// NextJS: Серверные компоненты (jsnxPmBsSC) - работа с БД
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Пользователи
+model User {
+  id            Int         @id @default(autoincrement())
+  username      String      @unique
+  email         String?     @unique
+  password      String
+  avatar        String?
+  bio           String?
+  balance       Int         @default(0)
+  role          String      @default("user") // user | admin
+  theme         String      @default("system") // light | dark | system
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  // Relations
+  projects      Project[]
+  likes         Like[]
+  subscriptions Subscription[] @relation("UserSubscriptions")
+  subscribers   Subscription[] @relation("UserSubscribers")
+  sessions      Session[]
+}
+
+// Проекты (репозитории)
+model Project {
+  id            Int         @id @default(autoincrement())
+  title         String
+  description   String?
+  type          String      // жанр/тип работы
+  tags          String?     // JSON массив
+  authorId      Int
+  isPublic      Boolean     @default(true)
+  views         Int         @default(0)
+  likes         Int         @default(0)
+  status        String      @default("published") // published | moderation | blocked
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  // Relations
+  author        User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  versions      Version[]
+  projectLikes  Like[]
+}
+
+// Версии (коммиты)
+model Version {
+  id            Int         @id @default(autoincrement())
+  projectId     Int
+  filePath      String
+  pdfPath       String?
+  versionNumber Int
+  message       String?
+  createdAt     DateTime    @default(now())
+  
+  // Relations
+  project       Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+// Лайки
+model Like {
+  id            Int         @id @default(autoincrement())
+  userId        Int
+  projectId     Int
+  createdAt     DateTime    @default(now())
+  
+  // Relations
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project       Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, projectId])
+}
+
+// Подписки (соавторство)
+model Subscription {
+  id            Int         @id @default(autoincrement())
+  subscriberId  Int // кто подписался
+  authorId      Int // на кого подписались
+  createdAt     DateTime    @default(now())
+  
+  // Relations
+  subscriber    User        @relation("UserSubscribers", fields: [subscriberId], references: [id], onDelete: Cascade)
+  author        User        @relation("UserSubscriptions", fields: [authorId], references: [id], onDelete: Cascade)
+  
+  @@unique([subscriberId, authorId])
+}
+
+// Сессии (для авторизации)
+model Session {
+  id            Int         @id @default(autoincrement())
+  userId        Int
+  token         String      @unique
+  expiresAt     DateTime
+  createdAt     DateTime    @default(now())
+  
+  // Relations
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

@@ -95,7 +95,7 @@ export default function AdminWorksPage() {
         <h2 className="text-2xl font-bold text-white">Работы</h2>
         <PDFExportButton
           data={projects.map((p, i) => ({
-            '№': i + 1,
+            'Номер': i + 1,
             'ID': p.id,
             'Автор': p.author.username,
             'Название': p.title,
@@ -103,7 +103,7 @@ export default function AdminWorksPage() {
             'Статус': p.status === 'published' ? 'Опубликовано' : p.status === 'blocked' ? 'Заблокировано' : 'Модерация',
           }))}
           columns={[
-            { header: '№', key: '№' },
+            { header: 'Номер', key: 'Номер' },
             { header: 'ID', key: 'ID' },
             { header: 'Автор', key: 'Автор' },
             { header: 'Название', key: 'Название' },

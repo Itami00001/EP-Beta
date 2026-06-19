@@ -11,9 +11,11 @@ interface FileUploaderProps {
   onFileSelect: (file: File) => void
   selectedFile: File | null
   onRemove: () => void
+  accept?: string
+  allowedTypes?: string[]
 }
 
-export default function FileUploader({ onFileSelect, selectedFile, onRemove }: FileUploaderProps) {
+export default function FileUploader({ onFileSelect, selectedFile, onRemove, accept = '.pdf,.docx,.md', allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/markdown'] }: FileUploaderProps) {
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -86,7 +88,7 @@ export default function FileUploader({ onFileSelect, selectedFile, onRemove }: F
           <input
             ref={fileInputRef}
             type="file"
-            accept=".pdf,.docx,.md"
+            accept={accept}
             onChange={handleFileSelect}
             className="hidden"
           />

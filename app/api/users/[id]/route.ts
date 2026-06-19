@@ -69,6 +69,14 @@ export async function PUT(
     const body = await request.json()
     const { username, bio, avatar, theme } = body
 
+    // Validate avatar format
+    if (avatar && !avatar.startsWith('/uploads/avatars/')) {
+      return NextResponse.json(
+        { error: 'Invalid avatar path' },
+        { status: 400 }
+      )
+    }
+
     // Only user can update their own profile (or admin)
     if (currentUser.id !== parseInt(params.id) && currentUser.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

@@ -41,6 +41,9 @@ export default function ProfilePage() {
   const [isOwnProfile, setIsOwnProfile] = useState(false)
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [subscribing, setSubscribing] = useState(false)
+  const [activeTab, setActiveTab] = useState('projects')
+  const [subscribers, setSubscribers] = useState<any[]>([])
+  const [subscriptions, setSubscriptions] = useState<any[]>([])
 
   useEffect(() => {
     const currentUser = JSON.parse(localStorage.getItem('user') || '{}')
@@ -48,7 +51,11 @@ export default function ProfilePage() {
     fetchUserProfile()
     fetchUserProjects()
     checkSubscription()
-  }, [params.id])
+    if (!isOwnProfile) {
+      fetchSubscribers()
+      fetchSubscriptions()
+    }
+  }, [params.id, isOwnProfile])
 
   const fetchUserProfile = async () => {
     try {
@@ -91,6 +98,22 @@ export default function ProfilePage() {
     document.cookie = 'token=; path=/; max-age=0; SameSite=Lax'
     router.push('/login')
     router.refresh()
+  }
+
+  const fetchSubscribers = async () => {
+    try {
+      const res = await authFetch(`/api/users/${params.id}/subscribers`)
+      const data = await res.json()
+      if (res.ok) setSubscribers(data.subscribers || [])
+    } catch (e) { console.error(e) }
+  }
+
+  const fetchSubscriptions = async () => {
+    try {
+      const res = await authFetch(`/api/users/${params.id}/subscriptions`)
+      const data = await res.json()
+      if (res.ok) setSubscriptions(data.subscriptions || [])
+    } catch (e) { console.error(e) }
   }
 
   if (loading) {

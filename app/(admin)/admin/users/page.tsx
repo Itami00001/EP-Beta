@@ -126,12 +126,12 @@ export default function AdminUsersPage() {
         <div className="flex items-center space-x-3">
           <PDFExportButton
             data={users.map((u, i) => ({
-              '№': i + 1, 'ID': u.id, 'Имя': u.username,
+              'Номер': i + 1, 'ID': u.id, 'Имя': u.username,
               'Email': u.email || '-', 'Баланс': u.balance,
               'Проекты': u._count.projects, 'Роль': u.role,
             }))}
             columns={[
-              { header: '№', key: '№' }, { header: 'ID', key: 'ID' },
+              { header: 'Номер', key: 'Номер' }, { header: 'ID', key: 'ID' },
               { header: 'Имя', key: 'Имя' }, { header: 'Email', key: 'Email' },
               { header: 'Баланс', key: 'Баланс' }, { header: 'Проекты', key: 'Проекты' },
               { header: 'Роль', key: 'Роль' },

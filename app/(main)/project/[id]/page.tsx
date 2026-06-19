@@ -8,7 +8,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Heart, Eye, User, Calendar, Upload, FileText, Clock } from 'lucide-react'
+import { ArrowLeft, Heart, Eye, User, Calendar, Upload, FileText, Clock, X } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
 import VersionHistory from '@/components/project/VersionHistory'
 import FileUploader from '@/components/project/FileUploader'
 import { formatDate, parseTags } from '@/lib/utils'
@@ -54,6 +55,8 @@ export default function ProjectPage() {
   const [versionMessage, setVersionMessage] = useState('')
   const [isLiked, setIsLiked] = useState(false)
   const [liking, setLiking] = useState(false)
+  const [showMarkdownModal, setShowMarkdownModal] = useState(false)
+  const [markdownContent, setMarkdownContent] = useState('')
 
   useEffect(() => {
     fetchProject()
@@ -292,7 +295,7 @@ export default function ProjectPage() {
             </div>
           </div>
 
-          {/* PDF viewer */}
+          {/* Document viewer */}
           {selectedVersion?.pdfPath && (
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
@@ -300,11 +303,53 @@ export default function ProjectPage() {
                 <span>Просмотр документа</span>
               </h3>
               <div className="w-full h-[600px] bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
-                <iframe
-                  src={`/${selectedVersion.pdfPath}`}
-                  className="w-full h-full"
-                  title="PDF Viewer"
-                />
+                {selectedVersion.pdfPath.endsWith('.md') ? (
+                  <div className="w-full h-full p-6 overflow-auto">
+                    <button
+                      onClick={() => {
+                        setShowMarkdownModal(true)
+                        // Fetch markdown content
+                        fetch(`/api/files/${selectedVersion.pdfPath}`)
+                          .then(res => res.text())
+                          .then(text => setMarkdownContent(text))
+                      }}
+                      className="mb-4 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
+                    >
+                      Открыть в модальном окне
+                    </button>
+                    <pre className="whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-200">
+                      Markdown файл - нажмите кнопку для просмотра
+                    </pre>
+                  </div>
+                ) : (
+                  <iframe
+                    src={`/api/files/${selectedVersion.pdfPath}`}
+                    className="w-full h-full"
+                    title="Document Viewer"
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Markdown Modal */}
+          {showMarkdownModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+                <div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Просмотр Markdown</h3>
+                  <button
+                    onClick={() => setShowMarkdownModal(false)}
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    <X size={20} className="text-gray-600 dark:text-gray-400" />
+                  </button>
+                </div>
+                <div className="p-6 overflow-auto flex-1">
+                  <div className="prose dark:prose-invert max-w-none">
+                    <ReactMarkdown>{markdownContent}</ReactMarkdown>
+                  </div>
+                </div>
               </div>
             </div>
           )}

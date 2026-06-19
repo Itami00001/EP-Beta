@@ -27,6 +27,8 @@ export default function Header({ user }: HeaderProps) {
   const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<User | null>(user)
+  const [subscriptions, setSubscriptions] = useState<any[]>([])
+  const [showSubscriptions, setShowSubscriptions] = useState(false)
 
   // Load user from localStorage on mount (client-side)
   useEffect(() => {
@@ -37,6 +39,24 @@ export default function Header({ user }: HeaderProps) {
       } catch {}
     }
   }, [])
+
+  // Load subscriptions when menu opens
+  useEffect(() => {
+    if (isMenuOpen && currentUser) {
+      fetchSubscriptions()
+    }
+  }, [isMenuOpen, currentUser])
+
+  const fetchSubscriptions = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const res = await fetch(`/api/users/${currentUser?.id}/subscriptions`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await res.json()
+      if (res.ok) setSubscriptions(data.subscriptions || [])
+    } catch (e) { console.error(e) }
+  }
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -182,6 +202,40 @@ export default function Header({ user }: HeaderProps) {
                   <User size={20} />
                   <span>Профиль</span>
                 </Link>
+
+                {/* Subscriptions accordion */}
+                <div>
+                  <button
+                    onClick={() => setShowSubscriptions(!showSubscriptions)}
+                    className="w-full flex items-center justify-between text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 py-2"
+                  >
+                    <span>Мои подписки ({subscriptions.length})</span>
+                    <span className="text-xs">{showSubscriptions ? '▼' : '▶'}</span>
+                  </button>
+                  {showSubscriptions && (
+                    <div className="ml-4 mt-2 space-y-2">
+                      {subscriptions.length === 0 ? (
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Нет подписок</p>
+                      ) : (
+                        subscriptions.map((sub: any) => (
+                          <Link
+                            key={sub.id}
+                            href={`/profile/${sub.id}`}
+                            className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 py-1"
+                            onClick={() => setIsMenuOpen(false)}
+                          >
+                            {sub.avatar ? (
+                              <img src={sub.avatar} alt={sub.username} className="w-6 h-6 rounded-full object-cover" />
+                            ) : (
+                              <User size={16} />
+                            )}
+                            <span>{sub.username}</span>
+                          </Link>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 {currentUser.role === 'admin' && (
                   <Link

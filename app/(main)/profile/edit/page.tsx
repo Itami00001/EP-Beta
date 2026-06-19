@@ -146,6 +146,8 @@ export default function ProfileEditPage() {
               onFileSelect={setSelectedFile}
               selectedFile={selectedFile}
               onRemove={() => setSelectedFile(null)}
+              accept=".png,.jpg,.jpeg"
+              allowedTypes={['image/png', 'image/jpeg', 'image/jpg']}
             />
           </div>
 

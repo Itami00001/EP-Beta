@@ -36,6 +36,8 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log('[Versions API] Creating new version for project:', params.id)
+    
     const token = request.headers.get('authorization')?.replace('Bearer ', '')
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -49,6 +51,8 @@ export async function POST(
 
     const body = await request.json()
     const { filePath, pdfPath, message } = body
+
+    console.log('[Versions API] File paths received:', { filePath, pdfPath })
 
     if (!filePath || !pdfPath) {
       return NextResponse.json(
@@ -76,6 +80,7 @@ export async function POST(
     })
 
     const nextVersionNumber = (lastVersion?.versionNumber || 0) + 1
+    console.log('[Versions API] Next version number:', nextVersionNumber)
 
     const version = await prisma.version.create({
       data: {
@@ -87,6 +92,8 @@ export async function POST(
       },
     })
 
+    console.log('[Versions API] Version created:', version.id)
+
     // Update project timestamp
     await prisma.project.update({
       where: { id: parseInt(params.id) },
@@ -95,7 +102,7 @@ export async function POST(
 
     return NextResponse.json({ version })
   } catch (error) {
-    console.error('Create version error:', error)
+    console.error('[Versions API] Create version error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -16,6 +16,9 @@ export async function GET(
     const filePath = params.path.join('/')
     const fullPath = path.join(process.cwd(), 'public', 'uploads', filePath)
     
+    console.log('[File API] Requested path:', filePath)
+    console.log('[File API] Full path:', fullPath)
+    
     // Determine content type based on file extension
     const ext = path.extname(filePath).toLowerCase()
     const contentTypes: Record<string, string> = {
@@ -30,7 +33,22 @@ export async function GET(
     
     const contentType = contentTypes[ext] || 'application/octet-stream'
     
+    console.log('[File API] Content type:', contentType)
+    
+    // For .md files, return text content
+    if (ext === '.md') {
+      const file = await readFile(fullPath, 'utf-8')
+      console.log('[File API] Returning markdown text, length:', file.length)
+      return new NextResponse(file, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Cache-Control': 'public, max-age=31536000',
+        },
+      })
+    }
+    
     const file = await readFile(fullPath)
+    console.log('[File API] File read successfully, size:', file.length)
     
     return new NextResponse(file, {
       headers: {
@@ -39,9 +57,9 @@ export async function GET(
       },
     })
   } catch (error) {
-    console.error('File serving error:', error)
+    console.error('[File API] Error:', error)
     return NextResponse.json(
-      { error: 'File not found' },
+      { error: 'File not found', details: String(error) },
       { status: 404 }
     )
   }

@@ -12,6 +12,8 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('[Upload API] Starting file upload')
+    
     const token = request.headers.get('authorization')?.replace('Bearer ', '')
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -28,6 +30,8 @@ export async function POST(request: NextRequest) {
     const projectId = formData.get('projectId') as string
     const versionNumber = formData.get('versionNumber') as string
 
+    console.log('[Upload API] Upload details:', { projectId, versionNumber, fileName: file.name, fileSize: file.size })
+
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
@@ -36,33 +40,42 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(bytes)
 
     // Create upload directory
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'projects', projectId || 'temp', versionNumber || '1')
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'projects', projectId || 'temp', 'versions', versionNumber || '1')
     await mkdir(uploadDir, { recursive: true })
+    console.log('[Upload API] Upload directory created:', uploadDir)
 
     // Determine file extension
     const ext = path.extname(file.name)
-    const fileName = `file${ext}`
+    const fileName = `original${ext}`
     const filePath = path.join(uploadDir, fileName)
 
     // Save file
     await writeFile(filePath, buffer)
+    console.log('[Upload API] File saved:', filePath)
 
-    const relativePath = `/uploads/projects/${projectId || 'temp'}/${versionNumber || '1'}/${fileName}`
+    // Store relative path WITHOUT leading slash
+    const relativePath = `projects/${projectId || 'temp'}/versions/${versionNumber || '1'}/${fileName}`
+    console.log('[Upload API] Relative path stored:', relativePath)
     
-    // Convert to PDF if not already PDF
+    // Convert to PDF if not already PDF and not .md
     let pdfPath = filePath
     let relativePdfPath = relativePath
     
-    if (ext !== '.pdf') {
-      // For now, we'll just copy the file as PDF placeholder
-      // In production, you'd use LibreOffice or similar for conversion
-      pdfPath = path.join(uploadDir, 'file.pdf')
+    if (ext === '.md') {
+      // For .md files, do NOT convert to PDF
+      console.log('[Upload API] Markdown file detected, skipping PDF conversion')
+      relativePdfPath = relativePath
+    } else if (ext !== '.pdf') {
+      // For .docx, .odt, etc., convert to PDF
+      console.log('[Upload API] Converting to PDF:', ext)
+      pdfPath = path.join(uploadDir, 'converted.pdf')
       
       // Create a simple PDF as placeholder with Unicode support
+      // In production, use LibreOffice or similar for actual conversion
       const pdfDoc = await PDFDocument.create()
       const page = pdfDoc.addPage([600, 400])
       const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica)
-      page.drawText(`File: ${file.name}\nSize: ${file.size} bytes`, {
+      page.drawText(`File: ${file.name}\nSize: ${file.size} bytes\n\nNote: This is a placeholder PDF.\nIn production, use LibreOffice for actual conversion.`, {
         x: 50,
         y: 350,
         size: 12,
@@ -70,7 +83,11 @@ export async function POST(request: NextRequest) {
       })
       const pdfBytes = await pdfDoc.save()
       await writeFile(pdfPath, Buffer.from(pdfBytes))
-      relativePdfPath = `/uploads/projects/${projectId || 'temp'}/${versionNumber || '1'}/file.pdf`
+      relativePdfPath = `projects/${projectId || 'temp'}/versions/${versionNumber || '1'}/converted.pdf`
+      console.log('[Upload API] PDF conversion complete, path:', relativePdfPath)
+    } else {
+      // Already PDF
+      console.log('[Upload API] PDF file detected, no conversion needed')
     }
 
     return NextResponse.json({
@@ -78,7 +95,7 @@ export async function POST(request: NextRequest) {
       pdfPath: relativePdfPath,
     })
   } catch (error) {
-    console.error('Upload error:', error)
+    console.error('[Upload API] Error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
